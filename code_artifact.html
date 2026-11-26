@@ -1,0 +1,2015 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Історія обчислювальних та програмних засобів: від абака до штучного інтелекту</title>
+
+  <!-- Підключення шрифту Inter з підтримкою кирилиці -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Tone.js для звукових ефектів у навчальній грі -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+  <!-- html2pdf.js для збереження підсумкового звіту у PDF з повною підтримкою українського шрифту -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Базові стилі та анімації для плавної взаємодії */
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 50%, #ecfeff 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.35s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulsePop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+      100% { transform: scale(1); }
+    }
+
+    .pop-anim {
+      animation: pulsePop 0.25s ease-out;
+    }
+
+    /* Стилі для друку / резервного збереження PDF через браузер */
+    @media print {
+      body {
+        background: #ffffff !important;
+      }
+      header, nav, .no-print, #mobile-bottom-nav, #toast-container {
+        display: none !important;
+      }
+      main {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+      }
+      #pdf-report-area {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+    }
+  </style>
+</head>
+<body class="text-slate-800 pb-24 md:pb-10">
+
+  <!-- Сповіщення (Toast) замість alert() -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-xs w-full pointer-events-none"></div>
+
+  <!-- Модальне вікно підтвердження (замість confirm()) -->
+  <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 fade-in">
+      <h3 class="text-lg font-bold text-slate-900 mb-2" id="confirm-title">Підтвердження</h3>
+      <p class="text-slate-600 text-sm mb-6" id="confirm-message">Ви впевнені?</p>
+      <div class="flex justify-end gap-3">
+        <button id="confirm-cancel" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition">Скасувати</button>
+        <button id="confirm-ok" class="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-sm transition">Підтвердити</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Верхня шапка та десктопна навігація -->
+  <header class="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-indigo-100 shadow-sm no-print">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+      <!-- Логотип та предмет -->
+      <div class="flex items-center gap-3 cursor-pointer" onclick="switchSection('home')">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-600 via-purple-600 to-cyan-500 flex items-center justify-center text-white font-extrabold text-lg shadow-md shrink-0">
+          ІТ
+        </div>
+        <div class="leading-tight">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-indigo-600">Інформатика • 9 клас</div>
+          <div class="text-xs sm:text-sm font-bold text-slate-900 line-clamp-1">
+            Історія обчислювальних та програмних засобів: від абака до штучного інтелекту
+          </div>
+        </div>
+      </div>
+
+      <!-- Індикатор загального прогресу та кнопка звуку -->
+      <div class="flex items-center gap-2 shrink-0">
+        <div class="hidden sm:flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-2xl border border-indigo-100">
+          <span class="text-xs font-semibold text-indigo-700">Прогрес:</span>
+          <div class="w-20 h-2 bg-indigo-200 rounded-full overflow-hidden">
+            <div id="header-progress-bar" class="h-full bg-gradient-to-r from-indigo-600 to-cyan-500 transition-all duration-500" style="width: 0%"></div>
+          </div>
+          <span id="header-progress-text" class="text-xs font-bold text-indigo-700">0%</span>
+        </div>
+        <button id="sound-toggle-btn" onclick="toggleSound()" title="Увімкнути або вимкнути звук" class="p-2.5 rounded-xl bg-slate-100 hover:bg-indigo-100 text-slate-700 transition text-sm font-semibold">
+          🔊
+        </button>
+      </div>
+    </div>
+
+    <!-- Десктопне головне меню -->
+    <nav class="hidden md:block border-t border-slate-100 bg-white/70">
+      <div class="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between gap-1.5 overflow-x-auto" id="desktop-nav">
+        <button data-nav="home" onclick="switchSection('home')" class="nav-btn px-3.5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5">🏠 Головна</button>
+        <button data-nav="theory" onclick="switchSection('theory')" class="nav-btn px-3.5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5">📚 Теорія</button>
+        <button data-nav="practice" onclick="switchSection('practice')" class="nav-btn px-3.5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5">🛠️ Практика</button>
+        <button data-nav="game" onclick="switchSection('game')" class="nav-btn px-3.5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5">🎮 Гра</button>
+        <button data-nav="quiz" onclick="switchSection('quiz')" class="nav-btn px-3.5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5">✅ Тест</button>
+        <button data-nav="reflection" onclick="switchSection('reflection')" class="nav-btn px-3.5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5">💭 Рефлексія</button>
+        <button data-nav="report" onclick="switchSection('report')" class="nav-btn px-3.5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5">📄 Звіт PDF</button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Основний контейнер сторінки -->
+  <main class="max-w-6xl mx-auto px-4 py-6">
+
+    <!-- ========================================================= -->
+    <!-- СЕКЦІЯ 1: ГОЛОВНЕ МЕНЮ ТА ПРОФІЛЬ УЧНЯ                    -->
+    <!-- ========================================================= -->
+    <section id="sec-home" class="app-section fade-in space-y-6">
+      <!-- Герой-блок -->
+      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-purple-600 to-cyan-600 text-white p-6 sm:p-10 shadow-xl">
+        <div class="relative z-10 max-w-3xl">
+          <span class="inline-block px-3.5 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs sm:text-sm font-bold tracking-wide mb-4">
+            Інтерактивний навчальний вебдодаток • 9 клас • Інформатика
+          </span>
+          <h1 class="text-2xl sm:text-4xl font-extrabold leading-tight mb-4">
+            Історія обчислювальних та програмних засобів: від абака до штучного інтелекту
+          </h1>
+          <p class="text-indigo-100 text-sm sm:text-base mb-6 leading-relaxed">
+            Досліджуй шлях людства від стародавньої лічильної дошки до сучасних нейромереж, вивчай будову апаратної та програмної складових інформаційних систем, виконуй практичні місії, грай та сформуй PDF-звіт для Google Classroom.
+          </p>
+          <div class="flex flex-wrap gap-3">
+            <button onclick="switchSection('theory')" class="px-5 py-3 rounded-2xl bg-white text-indigo-700 font-bold text-sm sm:text-base shadow-lg hover:bg-indigo-50 transition flex items-center gap-2">
+              🚀 Почати вивчення
+            </button>
+            <button onclick="switchSection('game')" class="px-5 py-3 rounded-2xl bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white font-bold text-sm sm:text-base border border-white/30 transition flex items-center gap-2">
+              🎮 Навчальна гра
+            </button>
+          </div>
+        </div>
+        <!-- Декоративні елементи фону -->
+        <div class="absolute -right-10 -bottom-10 w-64 h-64 rounded-full bg-cyan-400/20 blur-2xl"></div>
+        <div class="absolute right-10 top-6 text-7xl sm:text-8xl opacity-15 select-none pointer-events-none">🤖</div>
+      </div>
+
+      <!-- Картка профілю учня (для підсумкового звіту) -->
+      <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-md border border-indigo-100">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">👤 Дані учня / учениці</h2>
+            <p class="text-xs sm:text-sm text-slate-500">Заповни поля перед початком — вони автоматично потраплять у твій підсумковий PDF-звіт для Класруму.</p>
+          </div>
+          <span id="profile-saved-badge" class="hidden text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 w-fit">✓ Збережено</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="student-name" class="block text-xs font-bold text-slate-600 uppercase mb-1.5">Прізвище та ім'я</label>
+            <input id="student-name" type="text" placeholder="Наприклад: Коваленко Олександр" oninput="saveProfile()" class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none text-sm font-medium transition" />
+          </div>
+          <div>
+            <label for="student-class" class="block text-xs font-bold text-slate-600 uppercase mb-1.5">Клас</label>
+            <input id="student-class" type="text" placeholder="Наприклад: 9-А" oninput="saveProfile()" class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none text-sm font-medium transition" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Плитки головного меню (Швидка навігація по модулях) -->
+      <div>
+        <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">🗺️ Маршрут уроку</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div onclick="switchSection('theory')" class="group cursor-pointer bg-white rounded-3xl p-5 shadow-md hover:shadow-xl border border-indigo-100 hover:border-indigo-300 transition flex flex-col justify-between">
+            <div>
+              <div class="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition">📚</div>
+              <h3 class="font-bold text-slate-900 text-base mb-1">1. Інтерактивні пояснення</h3>
+              <p class="text-xs sm:text-sm text-slate-600">Стрічка часу від абака до ШІ, 5 поколінь ЕОМ, апаратна (Hardware) та програмна (Software) складові.</p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-indigo-600">
+              <span id="home-theory-status">Ознайомлення: 0/3 блоків</span>
+              <span>Відкрити →</span>
+            </div>
+          </div>
+
+          <div onclick="switchSection('practice')" class="group cursor-pointer bg-white rounded-3xl p-5 shadow-md hover:shadow-xl border border-cyan-100 hover:border-cyan-300 transition flex flex-col justify-between">
+            <div>
+              <div class="w-12 h-12 rounded-2xl bg-cyan-100 text-cyan-600 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition">🛠️</div>
+              <h3 class="font-bold text-slate-900 text-base mb-1">2. Практичні завдання</h3>
+              <p class="text-xs sm:text-sm text-slate-600">3 інтерактивні тренажери: хронологія винаходів, архітектор ПК та класифікатор програмного забезпечення.</p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-cyan-600">
+              <span id="home-practice-status">Виконано: 0/3 завдань</span>
+              <span>Відкрити →</span>
+            </div>
+          </div>
+
+          <div onclick="switchSection('game')" class="group cursor-pointer bg-white rounded-3xl p-5 shadow-md hover:shadow-xl border border-purple-100 hover:border-purple-300 transition flex flex-col justify-between">
+            <div>
+              <div class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition">🎮</div>
+              <h3 class="font-bold text-slate-900 text-base mb-1">3. Навчальна гра</h3>
+              <p class="text-xs sm:text-sm text-slate-600">«Кібер-Сортувальник»: швидкісний челендж на розпізнавання пристроїв, програм та епох ЕОМ.</p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-purple-600">
+              <span id="home-game-status">Рекорд: 0 очок</span>
+              <span>Грати →</span>
+            </div>
+          </div>
+
+          <div onclick="switchSection('quiz')" class="group cursor-pointer bg-white rounded-3xl p-5 shadow-md hover:shadow-xl border border-emerald-100 hover:border-emerald-300 transition flex flex-col justify-between">
+            <div>
+              <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition">✅</div>
+              <h3 class="font-bold text-slate-900 text-base mb-1">4. Тест для самоперевірки</h3>
+              <p class="text-xs sm:text-sm text-slate-600">12 запитань із миттєвою перевіркою, поясненнями та оцінкою за 12-бальною шкалою.</p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-emerald-600">
+              <span id="home-quiz-status">Не пройдено</span>
+              <span>Пройти →</span>
+            </div>
+          </div>
+
+          <div onclick="switchSection('reflection')" class="group cursor-pointer bg-white rounded-3xl p-5 shadow-md hover:shadow-xl border border-amber-100 hover:border-amber-300 transition flex flex-col justify-between">
+            <div>
+              <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition">💭</div>
+              <h3 class="font-bold text-slate-900 text-base mb-1">5. Саморефлексія</h3>
+              <p class="text-xs sm:text-sm text-slate-600">Оціни власне розуміння теми, відміть набуті вміння та поділися враженнями від уроку.</p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-amber-600">
+              <span id="home-reflection-status">Не заповнено</span>
+              <span>Заповнити →</span>
+            </div>
+          </div>
+
+          <div onclick="switchSection('report')" class="group cursor-pointer bg-white rounded-3xl p-5 shadow-md hover:shadow-xl border border-rose-100 hover:border-rose-300 transition flex flex-col justify-between">
+            <div>
+              <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition">📄</div>
+              <h3 class="font-bold text-slate-900 text-base mb-1">6. Підсумковий звіт у PDF</h3>
+              <p class="text-xs sm:text-sm text-slate-600">Переглянь усі свої бали та завантаж готовий PDF-файл, щоб прикріпити його у Google Classroom.</p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-rose-600">
+              <span>Готово до експорту</span>
+              <span>Відкрити →</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- СЕКЦІЯ 2: ІНТЕРАКТИВНІ ПОЯСНЕННЯ (ТЕОРІЯ)                 -->
+    <!-- ========================================================= -->
+    <section id="sec-theory" class="app-section hidden fade-in space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-2xl font-extrabold text-slate-900">📚 Інтерактивні пояснення</h2>
+          <p class="text-sm text-slate-600">Обери розділ нижче, натискай на картки та досліджуй матеріал.</p>
+        </div>
+        <!-- Вкладки теорії -->
+        <div class="flex flex-wrap gap-2 bg-white p-1.5 rounded-2xl shadow-sm border border-indigo-100">
+          <button onclick="switchTheoryTab('timeline')" id="ttab-timeline" class="theory-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-indigo-600 text-white">⏳ Еволюція та ШІ</button>
+          <button onclick="switchTheoryTab('hardware')" id="ttab-hardware" class="theory-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition text-slate-600 hover:bg-slate-100">🖥️ Апаратна складова</button>
+          <button onclick="switchTheoryTab('software')" id="ttab-software" class="theory-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition text-slate-600 hover:bg-slate-100">💿 Програмна складова</button>
+        </div>
+      </div>
+
+      <!-- ПІДБЛОК 2.1: ІСТОРІЯ ТА ЕВОЛЮЦІЯ (СТРІЧКА ЧАСУ) -->
+      <div id="theory-timeline" class="theory-pane space-y-5">
+        <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-md border border-indigo-100">
+          <h3 class="text-lg font-bold text-indigo-700 mb-2">Стрічка часу: від ручних обчислень до генеративного ШІ</h3>
+          <p class="text-sm text-slate-600 mb-4">Натисни на будь-яку епоху, щоб відкрити ключові винаходи, імена вчених та елементну базу.</p>
+
+          <!-- Кнопки епох -->
+          <div id="timeline-buttons" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5"></div>
+
+          <!-- Детальна картка обраної епохи -->
+          <div id="timeline-detail" class="rounded-2xl bg-gradient-to-br from-indigo-50 via-white to-cyan-50 border border-indigo-100 p-5 sm:p-6 transition-all"></div>
+        </div>
+
+        <!-- Порівняльна таблиця 5 поколінь ЕОМ -->
+        <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-md border border-indigo-100">
+          <h3 class="text-lg font-bold text-slate-900 mb-3">⚡ Шпаргалка: 5 поколінь ЕОМ</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs sm:text-sm">
+              <thead>
+                <tr class="bg-indigo-50 text-indigo-900">
+                  <th class="p-3 rounded-tl-xl font-bold">Покоління</th>
+                  <th class="p-3 font-bold">Роки</th>
+                  <th class="p-3 font-bold">Елементна база</th>
+                  <th class="p-3 rounded-tr-xl font-bold">Ключові особливості та приклади</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr class="hover:bg-slate-50">
+                  <td class="p-3 font-bold text-indigo-600">I покоління</td>
+                  <td class="p-3 whitespace-nowrap">1940–1950-ті</td>
+                  <td class="p-3 font-semibold">Електронні лампи</td>
+                  <td class="p-3">Величезні розміри, програмування в машинних кодах. Приклади: ENIAC (США), МЕОМ під керівництвом С. Лебедєва (Київ, 1950).</td>
+                </tr>
+                <tr class="hover:bg-slate-50">
+                  <td class="p-3 font-bold text-indigo-600">II покоління</td>
+                  <td class="p-3 whitespace-nowrap">1950–1960-ті</td>
+                  <td class="p-3 font-semibold">Транзистори</td>
+                  <td class="p-3">Менші розміри та енергоспоживання, поява мов високого рівня (Fortran, Algol) та магнітних стрічок.</td>
+                </tr>
+                <tr class="hover:bg-slate-50">
+                  <td class="p-3 font-bold text-indigo-600">III покоління</td>
+                  <td class="p-3 whitespace-nowrap">1960–1970-ті</td>
+                  <td class="p-3 font-semibold">Інтегральні мікросхеми (ІС)</td>
+                  <td class="p-3">Поява перших операційних систем (Unix), багатозадачність, клавіатури та дисплеї (IBM/360).</td>
+                </tr>
+                <tr class="hover:bg-slate-50">
+                  <td class="p-3 font-bold text-indigo-600">IV покоління</td>
+                  <td class="p-3 whitespace-nowrap">1970-ті – дотепер</td>
+                  <td class="p-3 font-semibold">ВІС та мікропроцесори</td>
+                  <td class="p-3">Масові персональні комп'ютери (Apple II, IBM PC), графічний інтерфейс (GUI), Інтернет, смартфони.</td>
+                </tr>
+                <tr class="hover:bg-slate-50">
+                  <td class="p-3 font-bold text-purple-600">V покоління</td>
+                  <td class="p-3 whitespace-nowrap">Сучасність і майбутнє</td>
+                  <td class="p-3 font-semibold">НадВІС, нейронні та квантові чипи</td>
+                  <td class="p-3">Штучний інтелект (GenAI, трансформери, GAN), паралельні та хмарні обчислення, квантові технології.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ПІДБЛОК 2.2: АПАРАТНА СКЛАДОВА (HARDWARE) -->
+      <div id="theory-hardware" class="theory-pane hidden space-y-5">
+        <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-md border border-cyan-100">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div>
+              <h3 class="text-lg font-bold text-cyan-700">🖥️ Апаратна складова (Hardware)</h3>
+              <p class="text-sm text-slate-600">Сукупність усіх фізичних деталей, мікросхем та пристроїв комп'ютерної системи («тіло» комп'ютера).</p>
+            </div>
+          </div>
+
+          <!-- Фільтри категорій апаратного забезпечення -->
+          <div id="hw-filter-btns" class="flex flex-wrap gap-2 mb-5"></div>
+
+          <!-- Картки пристроїв -->
+          <div id="hw-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- Схема реалізації інформаційних процесів -->
+        <div class="bg-gradient-to-r from-cyan-50 to-indigo-50 rounded-3xl p-5 sm:p-6 border border-cyan-200">
+          <h4 class="font-bold text-slate-900 mb-3 text-base">🔄 Як взаємодіють апаратні пристрої?</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-center">
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-cyan-100">
+              <div class="text-2xl mb-1">⌨️</div>
+              <div class="font-bold text-xs text-cyan-700 uppercase">1. Введення</div>
+              <p class="text-xs text-slate-600 mt-1">Клавіатура, миша, сканер, мікрофон перетворюють дані у цифрові.</p>
+            </div>
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-indigo-100">
+              <div class="text-2xl mb-1">🧠</div>
+              <div class="font-bold text-xs text-indigo-700 uppercase">2. Опрацювання</div>
+              <p class="text-xs text-slate-600 mt-1">Процесор (CPU) виконує команди з високою тактовою частотою (ГГц).</p>
+            </div>
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-purple-100">
+              <div class="text-2xl mb-1">💾</div>
+              <div class="font-bold text-xs text-purple-700 uppercase">3. Зберігання</div>
+              <p class="text-xs text-slate-600 mt-1">Тимчасово в ОЗП (RAM) та довготривало на SSD / HDD / Flash.</p>
+            </div>
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-emerald-100">
+              <div class="text-2xl mb-1">🖥️</div>
+              <div class="font-bold text-xs text-emerald-700 uppercase">4. Виведення</div>
+              <p class="text-xs text-slate-600 mt-1">Монітор, принтер, 3D-принтер, колонки подають результат людині.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ПІДБЛОК 2.3: ПРОГРАМНА СКЛАДОВА (SOFTWARE) -->
+      <div id="theory-software" class="theory-pane hidden space-y-5">
+        <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-md border border-purple-100">
+          <h3 class="text-lg font-bold text-purple-700 mb-1">💿 Програмна складова інформаційної системи (Software)</h3>
+          <p class="text-sm text-slate-600 mb-5">Сукупність усіх програм, що керують апаратним забезпеченням та дозволяють розв'язувати задачі користувача. Поділяється на три великі класи:</p>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <!-- Системне ПЗ -->
+            <div class="rounded-2xl p-5 bg-indigo-50 border border-indigo-200">
+              <div class="text-2xl mb-2">⚙️</div>
+              <h4 class="font-extrabold text-indigo-900 text-base mb-2">1. Системне ПЗ</h4>
+              <p class="text-xs text-slate-700 mb-3">Керує роботою складових ПК, ресурсами та обміном даними.</p>
+              <ul class="text-xs space-y-1.5 text-slate-700">
+                <li><strong>• Операційні системи (ОС):</strong> Windows, Linux, Unix, macOS, Android.</li>
+                <li><strong>• Мережеве ПЗ:</strong> Windows Server, Novell NetWare.</li>
+                <li><strong>• Сервісні програми (утиліти):</strong> файлові менеджери, архіватори, антивіруси, діагностика, інсталятори.</li>
+              </ul>
+            </div>
+
+            <!-- Прикладне ПЗ -->
+            <div class="rounded-2xl p-5 bg-emerald-50 border border-emerald-200">
+              <div class="text-2xl mb-2">🎨</div>
+              <h4 class="font-extrabold text-emerald-900 text-base mb-2">2. Прикладне ПЗ</h4>
+              <p class="text-xs text-slate-700 mb-3">Призначене для розв'язання конкретних задач користувача.</p>
+              <ul class="text-xs space-y-1.5 text-slate-700">
+                <li><strong>• Загального призначення:</strong> текстові (Word, Writer) й табличні процесори (Excel), графічні редактори (Photoshop, CorelDraw), презентації, СКБД (MySQL, Oracle).</li>
+                <li><strong>• Спеціального призначення:</strong> САПР (AutoCAD, Mathcad), експертні системи (WolframAlpha), бухгалтерські та правові БД.</li>
+              </ul>
+            </div>
+
+            <!-- Системи програмування -->
+            <div class="rounded-2xl p-5 bg-purple-50 border border-purple-200">
+              <div class="text-2xl mb-2">💻</div>
+              <h4 class="font-extrabold text-purple-900 text-base mb-2">3. Інструментальне ПЗ</h4>
+              <p class="text-xs text-slate-700 mb-3">Системи програмування для створення нових програм.</p>
+              <ul class="text-xs space-y-1.5 text-slate-700">
+                <li><strong>• Мови низького рівня:</strong> Асемблер (близькі до машинного коду).</li>
+                <li><strong>• Мови високого рівня:</strong> Python, C++, Java, JavaScript.</li>
+                <li><strong>• Транслятори:</strong> перекладають код у машинні 0 та 1 (інтерпретатори та компілятори).</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Інтерактивне порівняння: Компілятор vs Інтерпретатор та Ліцензії -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="rounded-2xl p-5 bg-slate-50 border border-slate-200">
+              <h4 class="font-bold text-slate-900 text-sm mb-2">🔄 Транслятори: у чому різниця?</h4>
+              <div class="space-y-2.5 text-xs text-slate-700">
+                <div class="p-3 rounded-xl bg-white border border-slate-200">
+                  <span class="font-bold text-indigo-700">Інтерпретатор</span> — читає <em>один оператор</em> програми, аналізує його та одразу виконує, після чого переходить до наступного (наприклад, Python).
+                </div>
+                <div class="p-3 rounded-xl bg-white border border-slate-200">
+                  <span class="font-bold text-purple-700">Компілятор</span> — спочатку читає, аналізує та перекладає у машинний код <em>усю програму цілком</em>, і лише потім вона виконується (наприклад, C++).
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-2xl p-5 bg-slate-50 border border-slate-200">
+              <h4 class="font-bold text-slate-900 text-sm mb-2">📜 Типи ліцензій програмного забезпечення</h4>
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <div class="p-2.5 rounded-xl bg-white border border-slate-200">
+                  <div class="font-bold text-rose-600">Комерційне</div>
+                  <div class="text-slate-600">Платне (Windows, Adobe Photoshop).</div>
+                </div>
+                <div class="p-2.5 rounded-xl bg-white border border-slate-200">
+                  <div class="font-bold text-cyan-600">Freeware</div>
+                  <div class="text-slate-600">Безкоштовне, але код закритий (Chrome, VLC).</div>
+                </div>
+                <div class="p-2.5 rounded-xl bg-white border border-slate-200">
+                  <div class="font-bold text-amber-600">Shareware</div>
+                  <div class="text-slate-600">Пробний період або обмеження (WinRAR).</div>
+                </div>
+                <div class="p-2.5 rounded-xl bg-white border border-slate-200">
+                  <div class="font-bold text-emerald-600">Open Source</div>
+                  <div class="text-slate-600">Вільне з відкритим кодом (Linux, LibreOffice).</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Кнопка підтвердження опрацювання теорії -->
+      <div class="flex justify-end">
+        <button onclick="switchSection('practice')" class="px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md transition">
+          Перейти до практичних завдань →
+        </button>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- СЕКЦІЯ 3: ПРАКТИЧНІ ЗАВДАННЯ (3 ТРЕНАЖЕРИ)                -->
+    <!-- ========================================================= -->
+    <section id="sec-practice" class="app-section hidden fade-in space-y-6">
+      <div>
+        <h2 class="text-2xl font-extrabold text-slate-900">🛠️ Практичні завдання</h2>
+        <p class="text-sm text-slate-600">Виконай усі 3 інтерактивні практикуми. Результати автоматично зараховуються у твій звіт!</p>
+      </div>
+
+      <!-- ПРАКТИКУМ 1: Хронологічний ланцюжок -->
+      <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-md border border-indigo-100">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h3 class="text-lg font-bold text-slate-900">1. Хронологічний ланцюжок</h3>
+          <span id="p1-badge" class="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-600">Очікує виконання</span>
+        </div>
+        <p class="text-xs sm:text-sm text-slate-600 mb-4">Розташуй події історії обчислювальної техніки у правильному порядку — від найдавнішої (зверху) до найновішої (знизу), використовуючи стрілки ↑ та ↓.</p>
+        <div id="p1-list" class="space-y-2.5 mb-4"></div>
+        <div class="flex flex-wrap gap-3">
+          <button onclick="checkPractice1()" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition">Перевірити порядок</button>
+          <button onclick="initPractice1(true)" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition">Перемішати знову</button>
+        </div>
+        <div id="p1-feedback" class="mt-3 text-sm font-semibold hidden"></div>
+      </div>
+
+      <!-- ПРАКТИКУМ 2: Архітектор ПК (Апаратна складова) -->
+      <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-md border border-cyan-100">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h3 class="text-lg font-bold text-slate-900">2. Архітектор ПК (Апаратна складова)</h3>
+          <span id="p2-badge" class="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-600">Очікує виконання</span>
+        </div>
+        <p class="text-xs sm:text-sm text-slate-600 mb-4">Вибери правильну категорію для кожного апаратного пристрою з термінологічного словника.</p>
+        <div id="p2-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4"></div>
+        <button onclick="checkPractice2()" class="px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-sm transition">Перевірити відповіді</button>
+        <div id="p2-feedback" class="mt-3 text-sm font-semibold hidden"></div>
+      </div>
+
+      <!-- ПРАКТИКУМ 3: Класифікатор ПЗ (Програмна складова) -->
+      <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-md border border-purple-100">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h3 class="text-lg font-bold text-slate-900">3. Класифікатор ПЗ (Програмна складова)</h3>
+          <span id="p3-badge" class="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-600">Очікує виконання</span>
+        </div>
+        <p class="text-xs sm:text-sm text-slate-600 mb-4">Визнач, до якого виду програмного забезпечення належить кожен засіб.</p>
+        <div id="p3-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4"></div>
+        <button onclick="checkPractice3()" class="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm transition">Перевірити класифікацію</button>
+        <div id="p3-feedback" class="mt-3 text-sm font-semibold hidden"></div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- СЕКЦІЯ 4: НАВЧАЛЬНА ГРА «КІБЕР-СОРТУВАЛЬНИК»              -->
+    <!-- ========================================================= -->
+    <section id="sec-game" class="app-section hidden fade-in space-y-5">
+      <div class="bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
+        <!-- Верхня панель гри -->
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-widest text-cyan-400">Навчальна аркада</span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold">🎮 Кібер-Сортувальник</h2>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="bg-white/10 px-3.5 py-2 rounded-2xl text-center">
+              <div class="text-[10px] uppercase text-indigo-200">Рекорд</div>
+              <div id="game-best" class="text-base font-extrabold text-amber-300">0</div>
+            </div>
+            <div class="bg-white/10 px-3.5 py-2 rounded-2xl text-center">
+              <div class="text-[10px] uppercase text-indigo-200">Очки</div>
+              <div id="game-score" class="text-base font-extrabold text-cyan-300">0</div>
+            </div>
+            <div class="bg-white/10 px-3.5 py-2 rounded-2xl text-center">
+              <div class="text-[10px] uppercase text-indigo-200">Життя</div>
+              <div id="game-lives" class="text-base font-extrabold text-rose-400">❤️❤️❤️</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Екран старту гри -->
+        <div id="game-start-screen" class="text-center py-6 sm:py-10 space-y-5">
+          <div class="text-6xl">⚡</div>
+          <h3 class="text-xl sm:text-2xl font-bold">Швидко класифікуй об'єкти інформатики!</h3>
+          <p class="text-sm text-indigo-200 max-w-lg mx-auto">
+            На екрані з'являтимуться об'єкти з історії обчислень, апаратної та програмної складових. Встигни натиснути правильну категорію до завершення таймера! За серію правильних відповідей нараховується комбо-бонус.
+          </p>
+          <button onclick="startGame()" class="px-8 py-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 text-white font-extrabold text-base shadow-lg shadow-cyan-500/30 transition transform hover:scale-105">
+            🚀 Почати гру
+          </button>
+        </div>
+
+        <!-- Активний екран гри -->
+        <div id="game-play-screen" class="hidden space-y-5">
+          <!-- Таймер та комбо -->
+          <div class="flex items-center justify-between text-xs font-bold">
+            <span id="game-round-info" class="text-indigo-200">Раунд 1 / 12</span>
+            <span id="game-combo" class="px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-300">Комбо: x1</span>
+          </div>
+          <div class="w-full h-3 bg-white/15 rounded-full overflow-hidden">
+            <div id="game-timer-bar" class="h-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-indigo-400 transition-all duration-100" style="width: 100%"></div>
+          </div>
+
+          <!-- Картка завдання -->
+          <div id="game-card" class="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 sm:p-8 text-center">
+            <div id="game-item-icon" class="text-5xl mb-3">💻</div>
+            <div id="game-item-title" class="text-xl sm:text-2xl font-extrabold mb-1">Назва об'єкта</div>
+            <div id="game-item-hint" class="text-xs sm:text-sm text-indigo-200">Підказка</div>
+          </div>
+
+          <!-- Кнопки категорій (адаптивні для дотику на смартфонах) -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button onclick="answerGame('history')" class="py-4 px-4 rounded-2xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-extrabold text-sm sm:text-base shadow-lg transition">
+              ⏳ Історія / Епоха ЕОМ
+            </button>
+            <button onclick="answerGame('hardware')" class="py-4 px-4 rounded-2xl bg-cyan-500 hover:bg-cyan-400 active:scale-95 text-slate-950 font-extrabold text-sm sm:text-base shadow-lg transition">
+              🖥️ Апаратна складова
+            </button>
+            <button onclick="answerGame('software')" class="py-4 px-4 rounded-2xl bg-purple-500 hover:bg-purple-400 active:scale-95 text-white font-extrabold text-sm sm:text-base shadow-lg transition">
+              💿 Програмна складова
+            </button>
+          </div>
+
+          <div id="game-feedback" class="text-center text-sm font-bold min-h-[24px]"></div>
+        </div>
+
+        <!-- Екран завершення гри -->
+        <div id="game-over-screen" class="hidden text-center py-8 space-y-4">
+          <div id="game-over-emoji" class="text-6xl">🏆</div>
+          <h3 id="game-over-title" class="text-2xl font-extrabold">Гру завершено!</h3>
+          <p id="game-over-desc" class="text-indigo-200 text-sm"></p>
+          <div class="flex justify-center gap-3 pt-2">
+            <button onclick="startGame()" class="px-6 py-3 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-sm transition">🔄 Грати ще раз</button>
+            <button onclick="switchSection('quiz')" class="px-6 py-3 rounded-2xl bg-white/15 hover:bg-white/25 text-white font-bold text-sm transition">Перейти до тесту →</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- СЕКЦІЯ 5: ТЕСТ ДЛЯ САМОПЕРЕВІРКИ (12 ЗАПИТАНЬ)            -->
+    <!-- ========================================================= -->
+    <section id="sec-quiz" class="app-section hidden fade-in space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <h2 class="text-2xl font-extrabold text-slate-900">✅ Тест для самоперевірки</h2>
+          <p class="text-sm text-slate-600">12 запитань — по 1 балу за кожну правильну відповідь (12-бальна шкала).</p>
+        </div>
+        <div id="quiz-score-pill" class="px-4 py-2 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-sm w-fit">
+          Результат: ще не пройдено
+        </div>
+      </div>
+
+      <!-- Контейнер запитань тесту -->
+      <div id="quiz-container" class="space-y-4"></div>
+
+      <!-- Кнопки дій тесту -->
+      <div class="flex flex-wrap gap-3">
+        <button id="quiz-submit-btn" onclick="submitQuiz()" class="px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm sm:text-base shadow-md transition">
+          Завершити та перевірити тест
+        </button>
+        <button onclick="resetQuiz()" class="px-5 py-3.5 rounded-2xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-sm transition">
+          🔄 Пройти тест заново
+        </button>
+      </div>
+
+      <!-- Підсумок тесту -->
+      <div id="quiz-summary" class="hidden rounded-3xl p-6 bg-white border-2 border-emerald-200 shadow-lg"></div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- СЕКЦІЯ 6: САМОРЕФЛЕКСІЯ УЧНЯ                              -->
+    <!-- ========================================================= -->
+    <section id="sec-reflection" class="app-section hidden fade-in space-y-6">
+      <div>
+        <h2 class="text-2xl font-extrabold text-slate-900">💭 Саморефлексія учня</h2>
+        <p class="text-sm text-slate-600">Осмисли свої досягнення на уроці. Твої відповіді буде додано до підсумкового PDF-звіту.</p>
+      </div>
+
+      <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-md border border-amber-100 space-y-6">
+        <!-- 1. Оцінка рівня розуміння -->
+        <div>
+          <label class="block text-sm font-bold text-slate-900 mb-3">1. Як ти оцінюєш свій рівень засвоєння теми?</label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="mood-selector">
+            <button type="button" data-mood="Відмінно! Усе зрозуміло 🌟" onclick="selectMood(this)" class="mood-btn p-3.5 rounded-2xl border-2 border-slate-200 hover:border-amber-400 text-center transition">
+              <div class="text-2xl mb-1">🌟</div>
+              <div class="text-xs font-bold">Відмінно! Усе зрозуміло</div>
+            </button>
+            <button type="button" data-mood="Добре, майже все ясно 👍" onclick="selectMood(this)" class="mood-btn p-3.5 rounded-2xl border-2 border-slate-200 hover:border-amber-400 text-center transition">
+              <div class="text-2xl mb-1">👍</div>
+              <div class="text-xs font-bold">Добре, майже все ясно</div>
+            </button>
+            <button type="button" data-mood="Потрібно ще повторити 🤔" onclick="selectMood(this)" class="mood-btn p-3.5 rounded-2xl border-2 border-slate-200 hover:border-amber-400 text-center transition">
+              <div class="text-2xl mb-1">🤔</div>
+              <div class="text-xs font-bold">Потрібно ще повторити</div>
+            </button>
+            <button type="button" data-mood="Було складно, потрібна допомога 💡" onclick="selectMood(this)" class="mood-btn p-3.5 rounded-2xl border-2 border-slate-200 hover:border-amber-400 text-center transition">
+              <div class="text-2xl mb-1">💡</div>
+              <div class="text-xs font-bold">Було складно</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Чек-лист компетентностей -->
+        <div>
+          <label class="block text-sm font-bold text-slate-900 mb-3">2. Познач твердження, які тепер для тебе вірні:</label>
+          <div class="space-y-2.5 text-sm">
+            <label class="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-amber-50/50 cursor-pointer border border-slate-200">
+              <input type="checkbox" class="refl-check w-5 h-5 accent-indigo-600 rounded" value="Називаю основні етапи розвитку обчислювальної техніки та 5 поколінь ЕОМ" onchange="saveReflection()" />
+              <span>Я можу назвати основні етапи розвитку обчислювальної техніки та 5 поколінь ЕОМ.</span>
+            </label>
+            <label class="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-amber-50/50 cursor-pointer border border-slate-200">
+              <input type="checkbox" class="refl-check w-5 h-5 accent-indigo-600 rounded" value="Розрізняю пристрої апаратної складової (CPU, RAM, ROM, SSD, введення/виведення)" onchange="saveReflection()" />
+              <span>Я розрізняю складові апаратного забезпечення (CPU, RAM/ROM, SSD/HDD, пристрої введення/виведення).</span>
+            </label>
+            <label class="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-amber-50/50 cursor-pointer border border-slate-200">
+              <input type="checkbox" class="refl-check w-5 h-5 accent-indigo-600 rounded" value="Класифікую системне, прикладне та інструментальне ПЗ і типи ліцензій" onchange="saveReflection()" />
+              <span>Я вмію класифікувати системне, прикладне й інструментальне ПЗ та пояснити роль трансляторів.</span>
+            </label>
+            <label class="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-amber-50/50 cursor-pointer border border-slate-200">
+              <input type="checkbox" class="refl-check w-5 h-5 accent-indigo-600 rounded" value="Розумію роль генеративного ШІ та принципи етичного використання" onchange="saveReflection()" />
+              <span>Я розумію сучасну роль генеративного ШІ (трансформери, GAN) та важливість академічної доброчесності.</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 3. Відкриті запитання -->
+        <div class="grid grid-cols-1 gap-4">
+          <div>
+            <label for="refl-interesting" class="block text-xs font-bold text-slate-700 uppercase mb-1.5">Що було для тебе найцікавішим на цьому уроці?</label>
+            <textarea id="refl-interesting" rows="2" oninput="saveReflection()" placeholder="Наприклад: дізнався про МЕОМ у Києві та різницю між компілятором і інтерпретатором..." class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none text-sm"></textarea>
+          </div>
+          <div>
+            <label for="refl-difficult" class="block text-xs font-bold text-slate-700 uppercase mb-1.5">Що виявилося найскладнішим або викликало запитання?</label>
+            <textarea id="refl-difficult" rows="2" oninput="saveReflection()" placeholder="Напиши, що варто ще повторити..." class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none text-sm"></textarea>
+          </div>
+          <div>
+            <label for="refl-future" class="block text-xs font-bold text-slate-700 uppercase mb-1.5">Як сучасні комп'ютери та ШІ допоможуть у твоїй майбутній професії?</label>
+            <textarea id="refl-future" rows="2" oninput="saveReflection()" placeholder="Твої думки..." class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none text-sm"></textarea>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+          <button onclick="saveReflection(true)" class="px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm transition">
+            💾 Зберегти рефлексію
+          </button>
+          <button onclick="switchSection('report')" class="px-5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition">
+            Переглянути підсумковий PDF-звіт →
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- СЕКЦІЯ 7: ПІДСУМКОВИЙ ЗВІТ УЧНЯ ТА ЕКСПОРТ У PDF          -->
+    <!-- ========================================================= -->
+    <section id="sec-report" class="app-section hidden fade-in space-y-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 no-print">
+        <div>
+          <h2 class="text-2xl font-extrabold text-slate-900">📄 Підсумковий звіт учня</h2>
+          <p class="text-sm text-slate-600">Завантаж PDF-файл та прикріпи його до завдання у Google Classroom.</p>
+        </div>
+        <div class="flex flex-wrap gap-2.5">
+          <button id="download-pdf-btn" onclick="downloadPDF()" class="px-5 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-extrabold text-sm shadow-lg transition flex items-center gap-2">
+            📥 Завантажити PDF для Класрум
+          </button>
+          <button onclick="window.print()" class="px-4 py-3 rounded-2xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-sm transition">
+            🖨️ Друк
+          </button>
+          <button onclick="askResetAll()" class="px-4 py-3 rounded-2xl bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold text-sm transition">
+            🗑️ Скинути
+          </button>
+        </div>
+      </div>
+
+      <!-- Блок, який рендериться у PDF -->
+      <div id="pdf-report-area" class="bg-white rounded-3xl p-6 sm:p-8 shadow-lg border border-slate-200 text-slate-800 space-y-6">
+        <!-- Шапка звіту -->
+        <div class="border-b-2 border-indigo-600 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div class="text-xs font-bold uppercase tracking-wider text-indigo-600">Звіт про виконання інтерактивного уроку • Інформатика (9 клас)</div>
+            <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 mt-1">
+              Історія обчислювальних та програмних засобів: від абака до штучного інтелекту
+            </h3>
+          </div>
+          <div class="text-xs text-slate-500 sm:text-right shrink-0">
+            <div>Дата формування:</div>
+            <div id="rep-date" class="font-bold text-slate-800">—</div>
+          </div>
+        </div>
+
+        <!-- Дані учня та загальний бал -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+          <div>
+            <div class="text-[11px] uppercase font-bold text-slate-500">Учень / Учениця</div>
+            <div id="rep-name" class="text-base font-extrabold text-slate-900 mt-0.5">Не вказано</div>
+          </div>
+          <div>
+            <div class="text-[11px] uppercase font-bold text-slate-500">Клас</div>
+            <div id="rep-class" class="text-base font-extrabold text-slate-900 mt-0.5">Не вказано</div>
+          </div>
+          <div class="sm:text-right">
+            <div class="text-[11px] uppercase font-bold text-indigo-600">Рекомендована оцінка</div>
+            <div id="rep-total-grade" class="text-2xl font-extrabold text-indigo-700 mt-0.5">0 / 12 балів</div>
+          </div>
+        </div>
+
+        <!-- Деталізація результатів по модулях -->
+        <div>
+          <h4 class="font-bold text-slate-900 text-sm uppercase tracking-wide mb-3">📊 Результати за навчальними модулями</h4>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs sm:text-sm border border-slate-200 rounded-xl overflow-hidden">
+              <thead>
+                <tr class="bg-indigo-50 text-indigo-900">
+                  <th class="p-3 font-bold border-b border-slate-200">Модуль</th>
+                  <th class="p-3 font-bold border-b border-slate-200">Статус</th>
+                  <th class="p-3 font-bold border-b border-slate-200 text-right">Результат</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200">
+                <tr>
+                  <td class="p-3 font-semibold">1. Інтерактивні пояснення (Теорія)</td>
+                  <td class="p-3" id="rep-theory-status">—</td>
+                  <td class="p-3 text-right font-bold" id="rep-theory-score">0/3 блоків</td>
+                </tr>
+                <tr>
+                  <td class="p-3 font-semibold">2. Практикум 1: Хронологічний ланцюжок</td>
+                  <td class="p-3" id="rep-p1-status">—</td>
+                  <td class="p-3 text-right font-bold" id="rep-p1-score">0%</td>
+                </tr>
+                <tr>
+                  <td class="p-3 font-semibold">3. Практикум 2: Архітектор ПК (Hardware)</td>
+                  <td class="p-3" id="rep-p2-status">—</td>
+                  <td class="p-3 text-right font-bold" id="rep-p2-score">0%</td>
+                </tr>
+                <tr>
+                  <td class="p-3 font-semibold">4. Практикум 3: Класифікатор ПЗ (Software)</td>
+                  <td class="p-3" id="rep-p3-status">—</td>
+                  <td class="p-3 text-right font-bold" id="rep-p3-score">0%</td>
+                </tr>
+                <tr>
+                  <td class="p-3 font-semibold">5. Навчальна гра «Кібер-Сортувальник»</td>
+                  <td class="p-3" id="rep-game-status">—</td>
+                  <td class="p-3 text-right font-bold" id="rep-game-score">0 очок</td>
+                </tr>
+                <tr class="bg-emerald-50/60">
+                  <td class="p-3 font-bold text-emerald-900">6. Підсумковий тест для самоперевірки</td>
+                  <td class="p-3 font-semibold text-emerald-800" id="rep-quiz-status">—</td>
+                  <td class="p-3 text-right font-extrabold text-emerald-700" id="rep-quiz-score">0 / 12</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Блок саморефлексії у звіті -->
+        <div class="bg-amber-50/70 rounded-2xl p-5 border border-amber-200 space-y-3">
+          <h4 class="font-bold text-amber-900 text-sm uppercase tracking-wide">💭 Саморефлексія учня</h4>
+          <div class="text-xs sm:text-sm">
+            <span class="font-bold text-slate-700">Рівень розуміння теми: </span>
+            <span id="rep-mood" class="font-semibold text-amber-800">Не обрано</span>
+          </div>
+          <div class="text-xs sm:text-sm">
+            <div class="font-bold text-slate-700 mb-1">Відмічені досягнення:</div>
+            <ul id="rep-checks" class="list-disc list-inside text-slate-700 space-y-0.5">
+              <li>Не відмічено</li>
+            </ul>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+            <div class="bg-white p-3 rounded-xl border border-amber-200">
+              <div class="font-bold text-slate-600 mb-1">Найцікавіше:</div>
+              <div id="rep-interesting" class="text-slate-800">—</div>
+            </div>
+            <div class="bg-white p-3 rounded-xl border border-amber-200">
+              <div class="font-bold text-slate-600 mb-1">Найскладніше:</div>
+              <div id="rep-difficult" class="text-slate-800">—</div>
+            </div>
+            <div class="bg-white p-3 rounded-xl border border-amber-200">
+              <div class="font-bold text-slate-600 mb-1">Роль ШІ в майбутньому:</div>
+              <div id="rep-future" class="text-slate-800">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Нижній колонтитул звіту -->
+        <div class="text-[11px] text-slate-400 flex justify-between items-center pt-2 border-t border-slate-100">
+          <span>Інтерактивний вебдодаток з інформатики (9 клас)</span>
+          <span>Підготовлено для завантаження в Google Classroom</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Мобільна нижня панель навігації (для смартфонів) -->
+  <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-indigo-100 shadow-lg px-1 py-1.5 no-print">
+    <div class="grid grid-cols-7 gap-0.5 text-center">
+      <button data-mnav="home" onclick="switchSection('home')" class="mnav-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-bold">
+        <span class="text-base">🏠</span><span>Меню</span>
+      </button>
+      <button data-mnav="theory" onclick="switchSection('theory')" class="mnav-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-bold">
+        <span class="text-base">📚</span><span>Теорія</span>
+      </button>
+      <button data-mnav="practice" onclick="switchSection('practice')" class="mnav-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-bold">
+        <span class="text-base">🛠️</span><span>Практ.</span>
+      </button>
+      <button data-mnav="game" onclick="switchSection('game')" class="mnav-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-bold">
+        <span class="text-base">🎮</span><span>Гра</span>
+      </button>
+      <button data-mnav="quiz" onclick="switchSection('quiz')" class="mnav-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-bold">
+        <span class="text-base">✅</span><span>Тест</span>
+      </button>
+      <button data-mnav="reflection" onclick="switchSection('reflection')" class="mnav-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-bold">
+        <span class="text-base">💭</span><span>Рефл.</span>
+      </button>
+      <button data-mnav="report" onclick="switchSection('report')" class="mnav-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-bold">
+        <span class="text-base">📄</span><span>PDF</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ========================================================= -->
+  <!-- JAVASCRIPT ЛОГІКА ВЕБДОДАТКУ                              -->
+  <!-- ========================================================= -->
+  <script>
+    // =========================================================
+    // 1. СТАН ДОДАТКУ ТА ЗБЕРЕЖЕННЯ В LOCALSTORAGE
+    // =========================================================
+    const STORAGE_KEY = 'inf9_history_app_v1';
+
+    const defaultState = {
+      name: '',
+      studentClass: '',
+      theoryVisited: { timeline: false, hardware: false, software: false },
+      practice: { p1: null, p2: null, p3: null }, // відсотки 0..100 або null
+      gameBest: 0,
+      gamePlayed: false,
+      quizScore: null, // 0..12 або null
+      quizAnswers: {},
+      reflection: {
+        mood: '',
+        checks: [],
+        interesting: '',
+        difficult: '',
+        future: ''
+      },
+      soundOn: true
+    };
+
+    let appState = loadState();
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return JSON.parse(JSON.stringify(defaultState));
+        const parsed = JSON.parse(raw);
+        return {
+          ...defaultState,
+          ...parsed,
+          theoryVisited: { ...defaultState.theoryVisited, ...(parsed.theoryVisited || {}) },
+          practice: { ...defaultState.practice, ...(parsed.practice || {}) },
+          reflection: { ...defaultState.reflection, ...(parsed.reflection || {}) }
+        };
+      } catch (e) {
+        return JSON.parse(JSON.stringify(defaultState));
+      }
+    }
+
+    function persistState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } catch (e) {
+        console.warn('Не вдалося зберегти стан:', e);
+      }
+      updateProgressUI();
+    }
+
+    // =========================================================
+    // 2. ЗВУКОВІ ЕФЕКТИ (Tone.js) ТА СПОВІЩЕННЯ (TOAST)
+    // =========================================================
+    let synth = null;
+
+    function playSound(type) {
+      if (!appState.soundOn || typeof Tone === 'undefined') return;
+      try {
+        if (Tone.context.state !== 'running') {
+          Tone.start();
+        }
+        if (!synth) {
+          synth = new Tone.Synth().toDestination();
+        }
+        const now = Tone.now();
+        if (type === 'good') {
+          synth.triggerAttackRelease('C5', '16n', now);
+          synth.triggerAttackRelease('E5', '16n', now + 0.08);
+        } else if (type === 'bad') {
+          synth.triggerAttackRelease('A2', '8n', now);
+        } else if (type === 'win') {
+          synth.triggerAttackRelease('C5', '16n', now);
+          synth.triggerAttackRelease('E5', '16n', now + 0.09);
+          synth.triggerAttackRelease('G5', '8n', now + 0.18);
+        } else if (type === 'click') {
+          synth.triggerAttackRelease('G4', '32n', now);
+        }
+      } catch (e) {
+        // Безпечне ігнорування помилок аудіоконтексту
+      }
+    }
+
+    function toggleSound() {
+      appState.soundOn = !appState.soundOn;
+      document.getElementById('sound-toggle-btn').textContent = appState.soundOn ? '🔊' : '🔇';
+      persistState();
+      showToast(appState.soundOn ? 'Звук увімкнено' : 'Звук вимкнено', 'info');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const colors = {
+        success: 'bg-emerald-600 text-white',
+        error: 'bg-rose-600 text-white',
+        info: 'bg-indigo-600 text-white',
+        warn: 'bg-amber-500 text-white'
+      };
+      const el = document.createElement('div');
+      el.className = `${colors[type] || colors.info} px-4 py-3 rounded-2xl shadow-lg text-xs sm:text-sm font-bold fade-in pointer-events-auto`;
+      el.textContent = message;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 0.3s';
+        setTimeout(() => el.remove(), 300);
+      }, 2800);
+    }
+
+    // Модальне вікно підтвердження
+    let confirmCallback = null;
+    function openConfirm(title, message, onConfirm) {
+      document.getElementById('confirm-title').textContent = title;
+      document.getElementById('confirm-message').textContent = message;
+      confirmCallback = onConfirm;
+      const modal = document.getElementById('confirm-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    document.getElementById('confirm-cancel').addEventListener('click', () => {
+      const modal = document.getElementById('confirm-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      confirmCallback = null;
+    });
+
+    document.getElementById('confirm-ok').addEventListener('click', () => {
+      const modal = document.getElementById('confirm-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      if (typeof confirmCallback === 'function') confirmCallback();
+      confirmCallback = null;
+    });
+
+    // =========================================================
+    // 3. НАВІГАЦІЯ МІЖ РОЗДІЛАМИ
+    // =========================================================
+    function switchSection(sectionId) {
+      // Зупиняємо таймер гри, якщо користувач пішов з гри
+      if (sectionId !== 'game' && gameTimerInterval) {
+        clearInterval(gameTimerInterval);
+        gameTimerInterval = null;
+      }
+
+      document.querySelectorAll('.app-section').forEach(sec => sec.classList.add('hidden'));
+      const target = document.getElementById(`sec-${sectionId}`);
+      if (target) {
+        target.classList.remove('hidden');
+      }
+
+      // Оновлення стилів десктопної навігації
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        const active = btn.dataset.nav === sectionId;
+        btn.className = active
+          ? 'nav-btn px-3.5 py-2 rounded-xl text-sm font-bold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-sm'
+          : 'nav-btn px-3.5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700';
+      });
+
+      // Оновлення стилів мобільної навігації
+      document.querySelectorAll('.mnav-btn').forEach(btn => {
+        const active = btn.dataset.mnav === sectionId;
+        btn.className = active
+          ? 'mnav-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-bold bg-indigo-100 text-indigo-700'
+          : 'mnav-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-semibold text-slate-500';
+      });
+
+      if (sectionId === 'theory') {
+        appState.theoryVisited.timeline = true;
+        persistState();
+      }
+      if (sectionId === 'report') {
+        renderReport();
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // =========================================================
+    // 4. ПРОФІЛЬ УЧНЯ
+    // =========================================================
+    function saveProfile() {
+      appState.name = document.getElementById('student-name').value.trim();
+      appState.studentClass = document.getElementById('student-class').value.trim();
+      persistState();
+      const badge = document.getElementById('profile-saved-badge');
+      badge.classList.remove('hidden');
+      clearTimeout(window._profTimer);
+      window._profTimer = setTimeout(() => badge.classList.add('hidden'), 1500);
+    }
+
+    // =========================================================
+    // 5. ТЕОРІЯ: ДАНІ ТА ІНТЕРАКТИВНІ КОМПОНЕНТИ
+    // =========================================================
+    const timelineData = [
+      {
+        id: 'abacus',
+        short: 'Ручний етап',
+        years: 'до XVII ст.',
+        icon: '🧮',
+        title: 'Домеханічний (ручний) етап: від пальців до абака',
+        inventor: 'Давні цивілізації (Вавилон, Греція, Китай)',
+        desc: 'Люди використовували пальці рук, камінці, зарубки на дереві та вузликове письмо (кіпу). Близько 3000 р. до н.е. з’явився абак — перша лічильна дошка, а пізніше рахівниця, що дозволяли виконувати додавання й віднімання розрядів.',
+        fact: 'Слово «калькулятор» походить від латинського calculus — «камінець» для лічби на абаку.'
+      },
+      {
+        id: 'mechanical',
+        short: 'Механічний',
+        years: 'XVII–XIX ст.',
+        icon: '⚙️',
+        title: 'Механічні обчислювальні машини',
+        inventor: 'Б. Паскаль, Г. Лейбніц, Ч. Беббідж, А. Лавлейс',
+        desc: 'У 1642 р. Блез Паскаль створив «Паскаліну» (додавання/віднімання на зубчастих колесах). У 1673 р. Лейбніц винайшов арифмометр (усі 4 арифметичні дії). У 1830-х Чарльз Беббідж спроєктував Аналітичну машину з пам’яттю та керуванням перфокартами, а Ада Лавлейс написала для неї перший у світі алгоритм.',
+        fact: 'Ада Лавлейс вважається першою програмісткою в історії людства!'
+      },
+      {
+        id: 'electromech',
+        short: 'Електромеханіка',
+        years: '1890–1940-ті',
+        icon: '🔌',
+        title: 'Електромеханічний етап',
+        inventor: 'Г. Голлеріт, К. Цузе, Г. Ейкен',
+        desc: 'Поєднання механічних реле та електричного струму. Герман Голлеріт створив табулятор на перфокартах (перепис населення США 1890 р. скоротився з 10 років до 1 року; його фірма згодом стала IBM). Конрад Цузе збудував програмовану машину Z3, а в США створили Mark I.',
+        fact: 'Перші комп’ютерні помилки назвали «багами» (bugs) після того, як у реле машини Mark II знайшли справжнього метелика.'
+      },
+      {
+        id: 'gen1',
+        short: 'I покоління',
+        years: '1940–1950-ті',
+        icon: '💡',
+        title: 'Перше покоління ЕОМ: Електронні лампи',
+        inventor: 'Дж. Моклі, П. Еккерт, С. Лебедєв, Дж. фон Нейман',
+        desc: 'Основа — тисячі вакуумних електронних ламп. Машини займали цілі зали, споживали величезну кількість енергії та програмувалися у машинному коді (0 і 1). У 1946 р. запущено ENIAC (США), а в 1950 р. у Києві під керівництвом Сергія Лебедєва створено МЕОМ — першу ЕОМ у континентальній Європі.',
+        fact: 'Джон фон Нейман сформулював принципи архітектури комп’ютера (пам’ять, процесор, двійкове кодування), які працюють і сьогодні.'
+      },
+      {
+        id: 'gen2',
+        short: 'II покоління',
+        years: '1950–1960-ті',
+        icon: '📻',
+        title: 'Друге покоління ЕОМ: Транзистори',
+        inventor: 'Дж. Бардін, В. Браттейн, В. Шоклі',
+        desc: 'Заміна ламп на напівпровідникові транзистори зробила комп’ютери значно меншими, надійнішими та швидшими. З’явилися магнітні диски та стрічки, а головне — перші мови програмування високого рівня (Fortran, Algol, COBOL) і транслятори.',
+        fact: 'Один транзистор заміняв громіздку скляну лампу та майже не перегрівався.'
+      },
+      {
+        id: 'gen3',
+        short: 'III покоління',
+        years: '1960–1970-ті',
+        icon: '📟',
+        title: 'Третє покоління ЕОМ: Інтегральні схеми',
+        inventor: 'Дж. Кілбі, Р. Нойс',
+        desc: 'На одному кристалі кремнію розмістили десятки й сотні транзисторів — з’явилися інтегральні мікросхеми (ІС). Комп’ютери отримали монітори, клавіатури та повноцінні операційні системи (наприклад, Unix), що дозволило запускати кілька програм одночасно.',
+        fact: 'Саме комп’ютери третього покоління забезпечили обчислення для польоту людини на Місяць.'
+      },
+      {
+        id: 'gen4',
+        short: 'IV покоління',
+        years: '1970-ті – сьогодення',
+        icon: '💻',
+        title: 'Четверте покоління ЕОМ: Мікропроцесори та ПК',
+        inventor: 'Intel (4004), С. Джобс, С. Возняк, Б. Гейтс',
+        desc: 'Великі інтегральні схеми (ВІС) дозволили створити мікропроцесор (Intel 4004, 1971). Це спричинило революцію персональних комп’ютерів (Apple II, IBM PC), появу графічних інтерфейсів (Windows, macOS), всесвітньої мережі Інтернет, ноутбуків і смартфонів.',
+        fact: 'Сучасний смартфон у мільйони разів потужніший за комп’ютери, що керували місією «Аполлон-11».'
+      },
+      {
+        id: 'gen5',
+        short: 'V покоління (ШІ)',
+        years: 'Сучасність і майбутнє',
+        icon: '🤖',
+        title: 'П’яте покоління: Штучний інтелект (GenAI) та квантові обчислення',
+        inventor: 'А. Тюрінг, І. Гудфеллоу, дослідники Google та OpenAI',
+        desc: 'Від тесту Тюрінга (1950) і нейромереж 1980-х до прориву GAN (2014) та архітектури трансформерів (2017). Сучасний генеративний ШІ (GPT, Gemini, DALL-E, Midjourney) створює тексти, код, зображення й відео, а паралельно розвиваються хмарні та квантові комп’ютери.',
+        fact: 'ШІ — це потужний помічник, але критичне мислення, фактчекінг і академічна доброчесність завжди залишаються за людиною!'
+      }
+    ];
+
+    const hardwareData = [
+      { cat: 'system', icon: '🧠', name: 'Центральний процесор (CPU)', desc: '«Мозок» комп’ютера, виконує команди та обчислення. Головні параметри: тактова частота (ГГц), кількість ядер, кеш-пам’ять.' },
+      { cat: 'system', icon: '🟩', name: 'Материнська плата', desc: 'Головна друкована плата, що об’єднує всі компоненти: містить сокет для CPU, чипсет, слоти DIMM/PCIe та батарейку CR2032.' },
+      { cat: 'system', icon: '🎮', name: 'Відеокарта (GPU) та VRAM', desc: 'Обробляє графіку, 3D-моделі та формує відеосигнал. Має власну надшвидку відеопам’ять (VRAM).' },
+      { cat: 'system', icon: '⚡', name: 'Блок живлення (БЖ) та охолодження', desc: 'БЖ перетворює змінний струм на постійний. Радіатор, кулер і термопаста відводять тепло, а ДБЖ (UPS) захищає від знеструмлення.' },
+      { cat: 'memory', icon: '⚡', name: 'Оперативна пам’ять (RAM / ОЗП)', desc: 'Швидка енергозалежна внутрішня пам’ять для поточних програм. При вимкненні живлення дані з неї стираються.' },
+      { cat: 'memory', icon: '🔒', name: 'Постійна пам’ять (ROM / ПЗП)', desc: 'Енергонезалежна внутрішня пам’ять із базовими інструкціями запуску ПК (BIOS / UEFI).' },
+      { cat: 'memory', icon: '🚀', name: 'SSD-накопичувач', desc: 'Сучасний швидкісний твердотільний накопичувач на основі флеш-пам’яті без рухомих механічних деталей.' },
+      { cat: 'memory', icon: '💿', name: 'HDD, Flash-диски та SD-карти', desc: 'Зовнішня (довготривала) пам’ять: магнітний жорсткий диск (HDD), USB-флешки, карти пам’яті SD та оптичні диски (CD/DVD).' },
+      { cat: 'io', icon: '⌨️', name: 'Пристрої введення', desc: 'Перетворюють дані людини у цифрові: клавіатура, миша, тачпад, сканер, мікрофон, веб-камера, графічний планшет, біометричний сканер.' },
+      { cat: 'io', icon: '🖥️', name: 'Пристрої виведення', desc: 'Монітор (роздільна здатність, частота оновлення Гц, піксель), принтери (лазерний/струменевий), плотер, 3D-принтер, колонки, проектор.' },
+      { cat: 'io', icon: '🥽', name: 'Комбіновані (інтерактивні)', desc: 'Одночасно вводять і виводять дані: сенсорний екран, інтерактивна дошка, VR-шолом.' },
+      { cat: 'io', icon: '📡', name: 'Мережа та інтерфейси', desc: 'Мережева карта (Ethernet), Wi-Fi, Bluetooth; універсальні порти USB (USB-C) та мультимедійний інтерфейс HDMI.' }
+    ];
+
+    function renderTimeline(activeId = 'abacus') {
+      const btnWrap = document.getElementById('timeline-buttons');
+      btnWrap.innerHTML = timelineData.map(item => `
+        <button onclick="renderTimeline('${item.id}'); playSound('click');"
+          class="p-3 rounded-2xl text-left transition border-2 ${item.id === activeId
+            ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
+            : 'bg-slate-50 hover:bg-indigo-50 text-slate-800 border-slate-200'}">
+          <div class="text-xl mb-0.5">${item.icon}</div>
+          <div class="text-xs font-extrabold leading-tight">${item.short}</div>
+          <div class="text-[10px] ${item.id === activeId ? 'text-indigo-200' : 'text-slate-500'}">${item.years}</div>
+        </button>
+      `).join('');
+
+      const cur = timelineData.find(t => t.id === activeId) || timelineData[0];
+      document.getElementById('timeline-detail').innerHTML = `
+        <div class="flex flex-col sm:flex-row gap-4 items-start fade-in">
+          <div class="w-16 h-16 rounded-2xl bg-white shadow-sm border border-indigo-100 flex items-center justify-center text-4xl shrink-0">${cur.icon}</div>
+          <div class="space-y-2">
+            <div class="inline-block px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold">${cur.years}</div>
+            <h4 class="text-lg sm:text-xl font-extrabold text-slate-900">${cur.title}</h4>
+            <div class="text-xs font-bold text-slate-500">Ключові постаті / джерела: <span class="text-slate-800">${cur.inventor}</span></div>
+            <p class="text-sm text-slate-700 leading-relaxed">${cur.desc}</p>
+            <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+              <strong>💡 Цікавий факт:</strong> ${cur.fact}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderHardware(filter = 'all') {
+      const cats = [
+        { id: 'all', label: 'Усі пристрої' },
+        { id: 'system', label: '🧠 Системний блок' },
+        { id: 'memory', label: '💾 Пам’ять' },
+        { id: 'io', label: '⌨️ Введення / Виведення / Мережа' }
+      ];
+      document.getElementById('hw-filter-btns').innerHTML = cats.map(c => `
+        <button onclick="renderHardware('${c.id}'); playSound('click');"
+          class="px-3.5 py-2 rounded-xl text-xs font-bold transition ${filter === c.id
+            ? 'bg-cyan-600 text-white shadow-sm'
+            : 'bg-slate-100 hover:bg-cyan-50 text-slate-700'}">
+          ${c.label}
+        </button>
+      `).join('');
+
+      const items = filter === 'all' ? hardwareData : hardwareData.filter(d => d.cat === filter);
+      document.getElementById('hw-cards-grid').innerHTML = items.map(item => `
+        <div class="p-4 rounded-2xl bg-slate-50 hover:bg-cyan-50/50 border border-slate-200 hover:border-cyan-300 transition fade-in">
+          <div class="text-2xl mb-2">${item.icon}</div>
+          <h4 class="font-bold text-slate-900 text-sm mb-1">${item.name}</h4>
+          <p class="text-xs text-slate-600 leading-relaxed">${item.desc}</p>
+        </div>
+      `).join('');
+    }
+
+    function switchTheoryTab(tabId) {
+      document.querySelectorAll('.theory-pane').forEach(p => p.classList.add('hidden'));
+      document.getElementById(`theory-${tabId}`).classList.remove('hidden');
+
+      document.querySelectorAll('.theory-tab').forEach(btn => {
+        const active = btn.id === `ttab-${tabId}`;
+        btn.className = active
+          ? 'theory-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-indigo-600 text-white'
+          : 'theory-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition text-slate-600 hover:bg-slate-100';
+      });
+
+      appState.theoryVisited[tabId] = true;
+      persistState();
+      playSound('click');
+    }
+
+    // =========================================================
+    // 6. ПРАКТИЧНІ ЗАВДАННЯ (3 ІНТЕРАКТИВНІ ТРЕНАЖЕРИ)
+    // =========================================================
+
+    // --- ПРАКТИКУМ 1: Хронологічний ланцюжок ---
+    const p1CorrectOrder = [
+      { id: 1, text: 'Абак — стародавня лічильна дошка (близько 3000 р. до н.е.)' },
+      { id: 2, text: '«Паскаліна» Блеза Паскаля — механічна машина (1642 р.)' },
+      { id: 3, text: 'Проєкт Аналітичної машини Беббіджа та алгоритм Ади Лавлейс (XIX ст.)' },
+      { id: 4, text: 'Лампові ЕОМ I покоління: ENIAC та київська МЕОМ (1946–1950 рр.)' },
+      { id: 5, text: 'Поява мікропроцесорів і перших персональних комп’ютерів IV покоління (1970-ті)' },
+      { id: 6, text: 'Трансформери та сучасний генеративний штучний інтелект GenAI (2017–дотепер)' }
+    ];
+    let p1Current = [];
+
+    function initPractice1(forceShuffle = false) {
+      if (p1Current.length === 0 || forceShuffle) {
+        p1Current = [...p1CorrectOrder].sort(() => Math.random() - 0.5);
+        // Гарантуємо, що порядок не випадково ідеальний одразу
+        if (p1Current.every((el, idx) => el.id === idx + 1)) {
+          [p1Current[0], p1Current[1]] = [p1Current[1], p1Current[0]];
+        }
+      }
+      renderPractice1();
+    }
+
+    function renderPractice1() {
+      const list = document.getElementById('p1-list');
+      list.innerHTML = p1Current.map((item, idx) => `
+        <div class="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+          <div class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 font-extrabold text-xs flex items-center justify-center shrink-0">${idx + 1}</span>
+            <span class="text-xs sm:text-sm font-semibold text-slate-800">${item.text}</span>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button onclick="moveP1(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} class="w-9 h-9 rounded-xl bg-white border border-slate-200 hover:bg-indigo-50 disabled:opacity-30 font-bold text-slate-700 transition">↑</button>
+            <button onclick="moveP1(${idx}, 1)" ${idx === p1Current.length - 1 ? 'disabled' : ''} class="w-9 h-9 rounded-xl bg-white border border-slate-200 hover:bg-indigo-50 disabled:opacity-30 font-bold text-slate-700 transition">↓</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function moveP1(idx, dir) {
+      const target = idx + dir;
+      if (target < 0 || target >= p1Current.length) return;
+      [p1Current[idx], p1Current[target]] = [p1Current[target], p1Current[idx]];
+      renderPractice1();
+      playSound('click');
+    }
+
+    function checkPractice1() {
+      let correct = 0;
+      p1Current.forEach((item, idx) => {
+        if (item.id === idx + 1) correct++;
+      });
+      const pct = Math.round((correct / p1CorrectOrder.length) * 100);
+      appState.practice.p1 = Math.max(appState.practice.p1 || 0, pct);
+      persistState();
+
+      const fb = document.getElementById('p1-feedback');
+      fb.classList.remove('hidden');
+      if (pct === 100) {
+        fb.className = 'mt-3 text-sm font-bold text-emerald-700 bg-emerald-50 p-3 rounded-xl border border-emerald-200';
+        fb.textContent = '🎉 Ідеально! Усі 6 історичних подій розташовано у правильній хронології (100%).';
+        playSound('win');
+      } else {
+        fb.className = 'mt-3 text-sm font-bold text-amber-800 bg-amber-50 p-3 rounded-xl border border-amber-200';
+        fb.textContent = `На своїх місцях ${correct} із ${p1CorrectOrder.length} подій (${pct}%). Спробуй ще раз покращити результат!`;
+        playSound('bad');
+      }
+    }
+
+    // --- ПРАКТИКУМ 2: Архітектор ПК (Hardware) ---
+    const p2Items = [
+      { id: 'hw1', name: 'Центральний процесор (CPU)', answer: 'system' },
+      { id: 'hw2', name: 'Оперативна пам’ять (RAM)', answer: 'memory' },
+      { id: 'hw3', name: 'Сканер штрих-кодів', answer: 'input' },
+      { id: 'hw4', name: '3D-принтер та плотер', answer: 'output' },
+      { id: 'hw5', name: 'Сенсорний екран / VR-шолом', answer: 'combo' },
+      { id: 'hw6', name: 'Твердотільний накопичувач (SSD)', answer: 'memory' }
+    ];
+
+    function initPractice2() {
+      const grid = document.getElementById('p2-grid');
+      grid.innerHTML = p2Items.map(item => `
+        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col gap-2">
+          <div class="text-sm font-bold text-slate-800">${item.name}</div>
+          <select id="sel-${item.id}" class="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-300 text-xs sm:text-sm font-medium outline-none focus:border-cyan-500">
+            <option value="">— Обери категорію —</option>
+            <option value="system">Системний блок (опрацювання)</option>
+            <option value="memory">Пристрій пам’яті</option>
+            <option value="input">Пристрій введення</option>
+            <option value="output">Пристрій виведення</option>
+            <option value="combo">Комбінований (введення + виведення)</option>
+          </select>
+        </div>
+      `).join('');
+    }
+
+    function checkPractice2() {
+      let correct = 0;
+      p2Items.forEach(item => {
+        const sel = document.getElementById(`sel-${item.id}`);
+        if (sel.value === item.answer) {
+          correct++;
+          sel.classList.remove('border-rose-400', 'bg-rose-50');
+          sel.classList.add('border-emerald-500', 'bg-emerald-50');
+        } else {
+          sel.classList.remove('border-emerald-500', 'bg-emerald-50');
+          sel.classList.add('border-rose-400', 'bg-rose-50');
+        }
+      });
+      const pct = Math.round((correct / p2Items.length) * 100);
+      appState.practice.p2 = Math.max(appState.practice.p2 || 0, pct);
+      persistState();
+
+      const fb = document.getElementById('p2-feedback');
+      fb.classList.remove('hidden');
+      if (pct === 100) {
+        fb.className = 'mt-3 text-sm font-bold text-emerald-700 bg-emerald-50 p-3 rounded-xl border border-emerald-200';
+        fb.textContent = '🎉 Чудово! Ти безпомилково класифікував усі 6 апаратних пристроїв (100%).';
+        playSound('win');
+      } else {
+        fb.className = 'mt-3 text-sm font-bold text-amber-800 bg-amber-50 p-3 rounded-xl border border-amber-200';
+        fb.textContent = `Правильно: ${correct} із ${p2Items.length} (${pct}%). Червоні поля потребують виправлення.`;
+        playSound('bad');
+      }
+    }
+
+    // --- ПРАКТИКУМ 3: Класифікатор ПЗ (Software) ---
+    const p3Items = [
+      { id: 'sw1', name: 'Операційна система Linux / Windows 11', answer: 'sys' },
+      { id: 'sw2', name: 'Текстовий процесор Word / LibreOffice Writer', answer: 'app_gen' },
+      { id: 'sw3', name: 'САПР AutoCAD / експертна система WolframAlpha', answer: 'app_spec' },
+      { id: 'sw4', name: 'Архіватор, антивірус, файловий менеджер', answer: 'sys' },
+      { id: 'sw5', name: 'Python IDLE, компілятор C++', answer: 'dev' },
+      { id: 'sw6', name: 'Графічний редактор Adobe Photoshop / GIMP', answer: 'app_gen' }
+    ];
+
+    function initPractice3() {
+      const grid = document.getElementById('p3-grid');
+      grid.innerHTML = p3Items.map(item => `
+        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col gap-2">
+          <div class="text-sm font-bold text-slate-800">${item.name}</div>
+          <select id="sel-${item.id}" class="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-300 text-xs sm:text-sm font-medium outline-none focus:border-purple-500">
+            <option value="">— Обери вид ПЗ —</option>
+            <option value="sys">Системне ПЗ (ОС або сервісні утиліти)</option>
+            <option value="app_gen">Прикладне ПЗ загального призначення</option>
+            <option value="app_spec">Прикладне ПЗ спеціального призначення</option>
+            <option value="dev">Інструментальне ПЗ (системи програмування)</option>
+          </select>
+        </div>
+      `).join('');
+    }
+
+    function checkPractice3() {
+      let correct = 0;
+      p3Items.forEach(item => {
+        const sel = document.getElementById(`sel-${item.id}`);
+        if (sel.value === item.answer) {
+          correct++;
+          sel.classList.remove('border-rose-400', 'bg-rose-50');
+          sel.classList.add('border-emerald-500', 'bg-emerald-50');
+        } else {
+          sel.classList.remove('border-emerald-500', 'bg-emerald-50');
+          sel.classList.add('border-rose-400', 'bg-rose-50');
+        }
+      });
+      const pct = Math.round((correct / p3Items.length) * 100);
+      appState.practice.p3 = Math.max(appState.practice.p3 || 0, pct);
+      persistState();
+
+      const fb = document.getElementById('p3-feedback');
+      fb.classList.remove('hidden');
+      if (pct === 100) {
+        fb.className = 'mt-3 text-sm font-bold text-emerald-700 bg-emerald-50 p-3 rounded-xl border border-emerald-200';
+        fb.textContent = '🎉 Браво! Усі види програмного забезпечення визначено бездоганно (100%).';
+        playSound('win');
+      } else {
+        fb.className = 'mt-3 text-sm font-bold text-amber-800 bg-amber-50 p-3 rounded-xl border border-amber-200';
+        fb.textContent = `Правильно: ${correct} із ${p3Items.length} (${pct}%). Перевір виділені червоним пункти.`;
+        playSound('bad');
+      }
+    }
+
+    // =========================================================
+    // 7. НАВЧАЛЬНА ГРА «КІБЕР-СОРТУВАЛЬНИК»
+    // =========================================================
+    const gamePool = [
+      { icon: '🧮', title: 'Абак', hint: 'Стародавня лічильна дошка', cat: 'history' },
+      { icon: '💡', title: 'ENIAC та МЕОМ', hint: 'Лампові машини I покоління', cat: 'history' },
+      { icon: '⚙️', title: 'Машина Ч. Беббіджа', hint: 'Аналітична машина XIX ст.', cat: 'history' },
+      { icon: '🤖', title: 'Тест Тюрінга (1950)', hint: 'Перевірка здатності машини мислити', cat: 'history' },
+      { icon: '🧠', title: 'Процесор (CPU)', hint: 'Тактова частота та ядра', cat: 'hardware' },
+      { icon: '⚡', title: 'Оперативна пам’ять (RAM)', hint: 'Енергозалежна тимчасова пам’ять', cat: 'hardware' },
+      { icon: '🚀', title: 'SSD-накопичувач', hint: 'Швидка флеш-пам’ять без рухомих частин', cat: 'hardware' },
+      { icon: '🟩', title: 'Материнська плата', hint: 'Сокет, чипсет, слоти PCIe', cat: 'hardware' },
+      { icon: '🐧', title: 'Linux / Windows', hint: 'Операційні системи (керування ресурсами)', cat: 'software' },
+      { icon: '📦', title: 'Архіватор та антивірус', hint: 'Сервісні програми (утиліти)', cat: 'software' },
+      { icon: '🔄', title: 'Компілятор та інтерпретатор', hint: 'Транслятори мов програмування', cat: 'software' },
+      { icon: '📐', title: 'AutoCAD / Photoshop', hint: 'Прикладне програмне забезпечення', cat: 'software' }
+    ];
+
+    let gameQueue = [];
+    let gameIdx = 0;
+    let gameScore = 0;
+    let gameLives = 3;
+    let gameCombo = 1;
+    let gameTimeLeft = 100;
+    let gameTimerInterval = null;
+    let gameLocked = false;
+
+    function startGame() {
+      gameQueue = [...gamePool].sort(() => Math.random() - 0.5);
+      gameIdx = 0;
+      gameScore = 0;
+      gameLives = 3;
+      gameCombo = 1;
+      gameLocked = false;
+
+      document.getElementById('game-start-screen').classList.add('hidden');
+      document.getElementById('game-over-screen').classList.add('hidden');
+      document.getElementById('game-play-screen').classList.remove('hidden');
+
+      updateGameHeader();
+      nextGameRound();
+      playSound('click');
+    }
+
+    function updateGameHeader() {
+      document.getElementById('game-score').textContent = gameScore;
+      document.getElementById('game-best').textContent = appState.gameBest;
+      document.getElementById('game-lives').textContent = '❤️'.repeat(Math.max(0, gameLives)) || '💔';
+      document.getElementById('game-combo').textContent = `Комбо: x${gameCombo}`;
+    }
+
+    function nextGameRound() {
+      if (gameLives <= 0 || gameIdx >= gameQueue.length) {
+        endGame();
+        return;
+      }
+      gameLocked = false;
+      const item = gameQueue[gameIdx];
+      document.getElementById('game-round-info').textContent = `Раунд ${gameIdx + 1} / ${gameQueue.length}`;
+      document.getElementById('game-item-icon').textContent = item.icon;
+      document.getElementById('game-item-title').textContent = item.title;
+      document.getElementById('game-item-hint').textContent = item.hint;
+      document.getElementById('game-feedback').textContent = '';
+
+      const card = document.getElementById('game-card');
+      card.classList.remove('pop-anim');
+      void card.offsetWidth;
+      card.classList.add('pop-anim');
+
+      gameTimeLeft = 100;
+      document.getElementById('game-timer-bar').style.width = '100%';
+      clearInterval(gameTimerInterval);
+      gameTimerInterval = setInterval(() => {
+        gameTimeLeft -= 1.25; // ~8 секунд на картку
+        document.getElementById('game-timer-bar').style.width = `${Math.max(0, gameTimeLeft)}%`;
+        if (gameTimeLeft <= 0) {
+          clearInterval(gameTimerInterval);
+          answerGame('timeout');
+        }
+      }, 100);
+    }
+
+    function answerGame(choice) {
+      if (gameLocked) return;
+      gameLocked = true;
+      clearInterval(gameTimerInterval);
+
+      const item = gameQueue[gameIdx];
+      const fb = document.getElementById('game-feedback');
+
+      if (choice === item.cat) {
+        const earned = 10 * gameCombo;
+        gameScore += earned;
+        gameCombo = Math.min(4, gameCombo + 1);
+        fb.className = 'text-center text-sm font-bold text-emerald-300';
+        fb.textContent = `✅ Правильно! +${earned} очок`;
+        playSound('good');
+      } else {
+        gameLives--;
+        gameCombo = 1;
+        fb.className = 'text-center text-sm font-bold text-rose-300';
+        const catNames = { history: 'Історія / Епоха ЕОМ', hardware: 'Апаратна складова', software: 'Програмна складова' };
+        fb.textContent = choice === 'timeout'
+          ? `⏰ Час вийшов! Правильно: ${catNames[item.cat]}`
+          : `❌ Помилка! Правильна категорія: ${catNames[item.cat]}`;
+        playSound('bad');
+      }
+
+      if (gameScore > appState.gameBest) {
+        appState.gameBest = gameScore;
+      }
+      appState.gamePlayed = true;
+      persistState();
+      updateGameHeader();
+
+      gameIdx++;
+      setTimeout(nextGameRound, 950);
+    }
+
+    function endGame() {
+      clearInterval(gameTimerInterval);
+      document.getElementById('game-play-screen').classList.add('hidden');
+      document.getElementById('game-over-screen').classList.remove('hidden');
+
+      const won = gameLives > 0;
+      document.getElementById('game-over-emoji').textContent = won ? '🏆' : '⚡';
+      document.getElementById('game-over-title').textContent = won ? 'Вітаємо! Ти пройшов усі раунди!' : 'Життя закінчилися!';
+      document.getElementById('game-over-desc').textContent = `Твій результат: ${gameScore} очок (найкращий рекорд: ${appState.gameBest} очок). Результат збережено у підсумковий звіт!`;
+      if (won) playSound('win');
+    }
+
+    // =========================================================
+    // 8. ТЕСТ ДЛЯ САМОПЕРЕВІРКИ (12 ЗАПИТАНЬ)
+    // =========================================================
+    const quizQuestions = [
+      {
+        q: '1. Який обчислювальний пристрій вважається найдавнішим у світі (близько 3000 р. до н.е.)?',
+        opts: ['Паскаліна', 'Абак', 'Табулятор Голлеріта', 'Арифмометр Лейбніца'],
+        ans: 1,
+        exp: 'Абак — стародавня лічильна дошка, що стала першим пристроєм для механізації обчислень.'
+      },
+      {
+        q: '2. Хто спроєктував Аналітичну машину у XIX ст. та хто написав для неї перший алгоритм?',
+        opts: ['Блез Паскаль і Готфрід Лейбніц', 'Чарльз Беббідж і Ада Лавлейс', 'Алан Тюрінг і Джон фон Нейман', 'Стів Джобс і Білл Гейтс'],
+        ans: 1,
+        exp: 'Чарльз Беббідж розробив проєкт Аналітичної машини, а Ада Лавлейс створила для неї перший алгоритм.'
+      },
+      {
+        q: '3. Що було елементною базою комп’ютерів І покоління (ENIAC, київська МЕОМ)?',
+        opts: ['Транзистори', 'Інтегральні мікросхеми', 'Електронні лампи', 'Мікропроцесори'],
+        ans: 2,
+        exp: 'ЕОМ першого покоління (1940–1950-ті рр.) будувалися на вакуумних електронних лампах.'
+      },
+      {
+        q: '4. Яка елементна база дозволила створити масові персональні комп’ютери IV покоління?',
+        opts: ['Перфокарти', 'Великі інтегральні схеми (ВІС) та мікропроцесори', 'Електромагнітні реле', 'Механічні шестерні'],
+        ans: 1,
+        exp: 'Мікропроцесори на основі ВІС (починаючи з 1970-х) започаткували епоху персональних комп’ютерів.'
+      },
+      {
+        q: '5. Яка технологія 2017 року стала фундаментом для сучасних мовних моделей генеративного ШІ (GPT, Gemini)?',
+        opts: ['Азбука Морзе', 'Архітектура трансформерів', 'Магнітні стрічки', 'Оптичні диски DVD'],
+        ans: 1,
+        exp: 'У 2017 році було запропоновано архітектуру трансформерів, яка здійснила прорив у генеративному ШІ.'
+      },
+      {
+        q: '6. Який вид пам’яті є швидким, але енергозалежним (дані зникають після вимкнення живлення)?',
+        opts: ['Оперативна пам’ять (RAM / ОЗП)', 'Постійна пам’ять (ROM / ПЗП)', 'Твердотільний накопичувач (SSD)', 'Flash-накопичувач'],
+        ans: 0,
+        exp: 'Оперативна пам’ять (RAM) зберігає дані лише під час роботи комп’ютера і очищується при знеструмленні.'
+      },
+      {
+        q: '7. У чому головна перевага накопичувача SSD над магнітним жорстким диском HDD?',
+        opts: ['Має більше рухомих механічних пластин', 'Працює на основі флеш-пам’яті без рухомих деталей і значно швидший', 'Зчитує дані лазерним променем', 'Підключається лише через HDMI'],
+        ans: 1,
+        exp: 'SSD не містить рухомих механічних частин, тому забезпечує високу швидкість роботи та тишу.'
+      },
+      {
+        q: '8. Який пристрій належить до комбінованих (інтерактивних), що одночасно вводять і виводять дані?',
+        opts: ['Лазерний принтер', 'Мікрофон', 'Сенсорний екран (та VR-шолом)', 'Сканер штрих-кодів'],
+        ans: 2,
+        exp: 'Сенсорний екран відображає зображення (виведення) та реагує на дотик (введення).'
+      },
+      {
+        q: '9. До якого виду програмного забезпечення належать операційні системи (Windows, Linux, Android) та архіватори?',
+        opts: ['Прикладне ПЗ спеціального призначення', 'Системне ПЗ', 'Системи керування базами даних', 'Експертні системи'],
+        ans: 1,
+        exp: 'Операційні системи, мережеве ПЗ та сервісні утиліти (архіватори, антивіруси) утворюють системне ПЗ.'
+      },
+      {
+        q: '10. Який із перелічених засобів є прикладним ПЗ спеціального призначення (САПР)?',
+        opts: ['AutoCAD', 'Google Chrome', 'Windows 11', 'Total Commander'],
+        ans: 0,
+        exp: 'AutoCAD — це система автоматизованого проєктування (САПР), тобто прикладне ПЗ спеціального призначення.'
+      },
+      {
+        q: '11. Чим компілятор відрізняється від інтерпретатора?',
+        opts: ['Компілятор працює лише без електрики', 'Компілятор перекладає на машинний код усю програму цілком перед виконанням, а інтерпретатор — пооператорно', 'Інтерпретатор створює тільки зображення', 'Вони нічим не відрізняються'],
+        ans: 1,
+        exp: 'Компілятор транслює весь код одразу, а інтерпретатор аналізує й виконує кожен оператор по черзі.'
+      },
+      {
+        q: '12. Який тип ліцензії означає безкоштовне ПЗ із відкритим вихідним кодом (наприклад, Linux, LibreOffice)?',
+        opts: ['Комерційне (пропрієтарне)', 'Shareware (умовно-безкоштовне)', 'Open Source (вільне та відкрите)', 'Trial (пробна версія)'],
+        ans: 2,
+        exp: 'Open Source надає вільний доступ до використання, вивчення та модифікації вихідного коду програми.'
+      }
+    ];
+
+    function renderQuiz() {
+      const container = document.getElementById('quiz-container');
+      container.innerHTML = quizQuestions.map((item, qIdx) => {
+        const savedChoice = appState.quizAnswers[qIdx];
+        return `
+          <div id="q-card-${qIdx}" class="bg-white rounded-3xl p-5 shadow-sm border border-slate-200 transition">
+            <div class="font-bold text-slate-900 text-sm sm:text-base mb-3">${item.q}</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              ${item.opts.map((opt, oIdx) => `
+                <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-200 hover:bg-indigo-50/50 cursor-pointer transition text-xs sm:text-sm">
+                  <input type="radio" name="q-${qIdx}" value="${oIdx}" ${savedChoice === oIdx ? 'checked' : ''}
+                    onchange="selectQuizAnswer(${qIdx}, ${oIdx})" class="w-4 h-4 accent-indigo-600 shrink-0" />
+                  <span>${opt}</span>
+                </label>
+              `).join('')}
+            </div>
+            <div id="q-exp-${qIdx}" class="hidden mt-3 text-xs p-3 rounded-xl"></div>
+          </div>
+        `;
+      }).join('');
+
+      if (appState.quizScore !== null) {
+        showQuizResultsUI(false);
+      }
+    }
+
+    function selectQuizAnswer(qIdx, oIdx) {
+      appState.quizAnswers[qIdx] = oIdx;
+      persistState();
+    }
+
+    function submitQuiz() {
+      const answeredCount = Object.keys(appState.quizAnswers).length;
+      if (answeredCount < quizQuestions.length) {
+        showToast(`Дай відповідь на всі запитання (${answeredCount}/${quizQuestions.length})`, 'warn');
+        return;
+      }
+
+      let score = 0;
+      quizQuestions.forEach((item, qIdx) => {
+        if (appState.quizAnswers[qIdx] === item.ans) score++;
+      });
+
+      appState.quizScore = score;
+      persistState();
+      showQuizResultsUI(true);
+    }
+
+    function showQuizResultsUI(withSound = false) {
+      let score = 0;
+      quizQuestions.forEach((item, qIdx) => {
+        const userAns = appState.quizAnswers[qIdx];
+        const isCorrect = userAns === item.ans;
+        if (isCorrect) score++;
+
+        const expEl = document.getElementById(`q-exp-${qIdx}`);
+        const cardEl = document.getElementById(`q-card-${qIdx}`);
+        if (expEl && cardEl) {
+          expEl.classList.remove('hidden');
+          if (isCorrect) {
+            cardEl.classList.remove('border-rose-300');
+            cardEl.classList.add('border-emerald-300');
+            expEl.className = 'mt-3 text-xs p-3 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200';
+            expEl.innerHTML = `<strong>✅ Правильно!</strong> ${item.exp}`;
+          } else {
+            cardEl.classList.remove('border-emerald-300');
+            cardEl.classList.add('border-rose-300');
+            expEl.className = 'mt-3 text-xs p-3 rounded-xl bg-rose-50 text-rose-800 border border-rose-200';
+            expEl.innerHTML = `<strong>❌ Неправильно.</strong> Правильна відповідь: <em>${item.opts[item.ans]}</em>. ${item.exp}`;
+          }
+        }
+      });
+
+      const pct = Math.round((score / quizQuestions.length) * 100);
+      const level = score >= 10 ? 'Високий рівень 🌟' : score >= 7 ? 'Достатній рівень 👍' : score >= 4 ? 'Середній рівень 📚' : 'Початковий рівень 💡';
+
+      const sumEl = document.getElementById('quiz-summary');
+      sumEl.classList.remove('hidden');
+      sumEl.innerHTML = `
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div class="text-xs font-bold uppercase text-emerald-600">Тест завершено</div>
+            <h3 class="text-xl font-extrabold text-slate-900">Твій результат: ${score} з 12 балів (${pct}%)</h3>
+            <p class="text-sm text-slate-600 mt-1">Рівень навчальних досягнень: <strong>${level}</strong></p>
+          </div>
+          <button onclick="switchSection('reflection')" class="px-5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition">
+            Перейти до саморефлексії →
+          </button>
+        </div>
+      `;
+
+      document.getElementById('quiz-score-pill').textContent = `Результат: ${score} / 12 балів`;
+      if (withSound) {
+        playSound(score >= 7 ? 'win' : 'bad');
+        sumEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    function resetQuiz() {
+      appState.quizScore = null;
+      appState.quizAnswers = {};
+      persistState();
+      document.getElementById('quiz-summary').classList.add('hidden');
+      document.getElementById('quiz-score-pill').textContent = 'Результат: ще не пройдено';
+      renderQuiz();
+      showToast('Тест скинуто. Можна проходити заново!', 'info');
+    }
+
+    // =========================================================
+    // 9. САМОРЕФЛЕКСІЯ
+    // =========================================================
+    function selectMood(btn) {
+      appState.reflection.mood = btn.dataset.mood;
+      highlightMoodButtons();
+      persistState();
+      playSound('click');
+    }
+
+    function highlightMoodButtons() {
+      document.querySelectorAll('.mood-btn').forEach(btn => {
+        const active = btn.dataset.mood === appState.reflection.mood;
+        btn.className = active
+          ? 'mood-btn p-3.5 rounded-2xl border-2 border-amber-500 bg-amber-50 text-amber-900 text-center shadow-sm transition'
+          : 'mood-btn p-3.5 rounded-2xl border-2 border-slate-200 hover:border-amber-400 text-center transition';
+      });
+    }
+
+    function saveReflection(notify = false) {
+      const checks = [];
+      document.querySelectorAll('.refl-check:checked').forEach(cb => checks.push(cb.value));
+      appState.reflection.checks = checks;
+      appState.reflection.interesting = document.getElementById('refl-interesting').value.trim();
+      appState.reflection.difficult = document.getElementById('refl-difficult').value.trim();
+      appState.reflection.future = document.getElementById('refl-future').value.trim();
+      persistState();
+      if (notify) {
+        showToast('Саморефлексію успішно збережено!', 'success');
+        playSound('good');
+      }
+    }
+
+    function restoreReflectionUI() {
+      highlightMoodButtons();
+      document.querySelectorAll('.refl-check').forEach(cb => {
+        cb.checked = appState.reflection.checks.includes(cb.value);
+      });
+      document.getElementById('refl-interesting').value = appState.reflection.interesting || '';
+      document.getElementById('refl-difficult').value = appState.reflection.difficult || '';
+      document.getElementById('refl-future').value = appState.reflection.future || '';
+    }
+
+    // =========================================================
+    // 10. ОНОВЛЕННЯ ПРОГРЕСУ ТА ПІДСУМКОВИЙ ЗВІТ + PDF
+    // =========================================================
+    function calculateRecommendedGrade() {
+      // Якщо тест пройдено, беремо за основу тест (70%) + практику/гру/теорію (30%)
+      const theoryDone = Object.values(appState.theoryVisited).filter(Boolean).length / 3;
+      const pAvg = ((appState.practice.p1 || 0) + (appState.practice.p2 || 0) + (appState.practice.p3 || 0)) / 300;
+      const gameFactor = Math.min(1, appState.gameBest / 120);
+      const quizFactor = (appState.quizScore || 0) / 12;
+
+      const weighted = quizFactor * 0.6 + pAvg * 0.25 + gameFactor * 0.1 + theoryDone * 0.05;
+      return Math.min(12, Math.round(weighted * 12));
+    }
+
+    function updateProgressUI() {
+      const theoryCount = Object.values(appState.theoryVisited).filter(Boolean).length;
+      const pracCount = [appState.practice.p1, appState.practice.p2, appState.practice.p3].filter(v => v !== null).length;
+      const hasGame = appState.gamePlayed ? 1 : 0;
+      const hasQuiz = appState.quizScore !== null ? 1 : 0;
+      const hasRefl = (appState.reflection.mood || appState.reflection.interesting) ? 1 : 0;
+
+      const totalSteps = 3 + 3 + 1 + 1 + 1; // 9 кроків
+      const doneSteps = theoryCount + pracCount + hasGame + hasQuiz + hasRefl;
+      const pct = Math.round((doneSteps / totalSteps) * 100);
+
+      document.getElementById('header-progress-bar').style.width = `${pct}%`;
+      document.getElementById('header-progress-text').textContent = `${pct}%`;
+
+      // Оновлення статусів на головній
+      document.getElementById('home-theory-status').textContent = `Ознайомлення: ${theoryCount}/3 блоків`;
+      document.getElementById('home-practice-status').textContent = `Виконано: ${pracCount}/3 завдань`;
+      document.getElementById('home-game-status').textContent = `Рекорд: ${appState.gameBest} очок`;
+      document.getElementById('home-quiz-status').textContent = appState.quizScore !== null ? `Бал: ${appState.quizScore}/12` : 'Не пройдено';
+      document.getElementById('home-reflection-status').textContent = hasRefl ? 'Заповнено ✓' : 'Не заповнено';
+
+      // Оновлення бейджів практикумів
+      const setBadge = (id, val) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (val === null) {
+          el.className = 'text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-600';
+          el.textContent = 'Очікує виконання';
+        } else if (val === 100) {
+          el.className = 'text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-700';
+          el.textContent = 'Виконано: 100% ✓';
+        } else {
+          el.className = 'text-xs font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-800';
+          el.textContent = `Найкращий результат: ${val}%`;
+        }
+      };
+      setBadge('p1-badge', appState.practice.p1);
+      setBadge('p2-badge', appState.practice.p2);
+      setBadge('p3-badge', appState.practice.p3);
+    }
+
+    function renderReport() {
+      const now = new Date();
+      document.getElementById('rep-date').textContent = now.toLocaleString('uk-UA', {
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+
+      document.getElementById('rep-name').textContent = appState.name || 'Не вказано (заповніть на Головній)';
+      document.getElementById('rep-class').textContent = appState.studentClass || 'Не вказано';
+
+      const grade = calculateRecommendedGrade();
+      document.getElementById('rep-total-grade').textContent = `${grade} / 12 балів`;
+
+      const theoryCount = Object.values(appState.theoryVisited).filter(Boolean).length;
+      document.getElementById('rep-theory-status').textContent = theoryCount === 3 ? 'Опрацьовано повністю' : theoryCount > 0 ? 'Опрацьовано частково' : 'Не відкрито';
+      document.getElementById('rep-theory-score').textContent = `${theoryCount} / 3 блоків`;
+
+      const formatPrac = (val, stId, scId) => {
+        document.getElementById(stId).textContent = val === null ? 'Не виконано' : val === 100 ? 'Виконано без помилок' : 'Виконано з помилками';
+        document.getElementById(scId).textContent = val === null ? '—' : `${val}%`;
+      };
+      formatPrac(appState.practice.p1, 'rep-p1-status', 'rep-p1-score');
+      formatPrac(appState.practice.p2, 'rep-p2-status', 'rep-p2-score');
+      formatPrac(appState.practice.p3, 'rep-p3-status', 'rep-p3-score');
+
+      document.getElementById('rep-game-status').textContent = appState.gamePlayed ? 'Зіграно' : 'Не зіграно';
+      document.getElementById('rep-game-score').textContent = `${appState.gameBest} очок`;
+
+      document.getElementById('rep-quiz-status').textContent = appState.quizScore !== null ? 'Пройдено' : 'Не пройдено';
+      document.getElementById('rep-quiz-score').textContent = appState.quizScore !== null ? `${appState.quizScore} / 12` : '—';
+
+      document.getElementById('rep-mood').textContent = appState.reflection.mood || 'Не обрано';
+      const checksUl = document.getElementById('rep-checks');
+      if (appState.reflection.checks.length > 0) {
+        checksUl.innerHTML = appState.reflection.checks.map(c => `<li>${c}</li>`).join('');
+      } else {
+        checksUl.innerHTML = '<li class="text-slate-400">Не відмічено</li>';
+      }
+      document.getElementById('rep-interesting').textContent = appState.reflection.interesting || '—';
+      document.getElementById('rep-difficult').textContent = appState.reflection.difficult || '—';
+      document.getElementById('rep-future').textContent = appState.reflection.future || '—';
+    }
+
+    function downloadPDF() {
+      renderReport();
+      if (!appState.name) {
+        showToast('Порада: вкажи своє прізвище та ім’я на вкладці «Головна» перед збереженням!', 'warn');
+      }
+
+      const element = document.getElementById('pdf-report-area');
+      const btn = document.getElementById('download-pdf-btn');
+      const origText = btn.innerHTML;
+      btn.innerHTML = '⏳ Формуємо PDF...';
+      btn.disabled = true;
+
+      const safeName = (appState.name || 'Uchen').replace(/[^a-zA-Zа-яА-ЯіІїЇєЄґҐ0-9_-]/g, '_');
+      const safeClass = (appState.studentClass || '9kl').replace(/[^a-zA-Zа-яА-ЯіІїЇєЄґҐ0-9_-]/g, '_');
+      const fileName = `Zvit_Informatyka_${safeClass}_${safeName}.pdf`;
+
+      if (typeof html2pdf !== 'undefined') {
+        const opt = {
+          margin: [8, 8, 8, 8],
+          filename: fileName,
+          image: { type: 'jpeg', quality: 0.96 },
+          html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(element).save().then(() => {
+          btn.innerHTML = origText;
+          btn.disabled = false;
+          showToast('PDF-звіт завантажено! Тепер його можна додати в Класрум.', 'success');
+          playSound('win');
+        }).catch(() => {
+          btn.innerHTML = origText;
+          btn.disabled = false;
+          showToast('Використовуйте кнопку «Друк» -> «Зберегти як PDF».', 'warn');
+        });
+      } else {
+        btn.innerHTML = origText;
+        btn.disabled = false;
+        window.print();
+      }
+    }
+
+    function askResetAll() {
+      openConfirm(
+        'Скинути весь прогрес?',
+        'Усі бали за практику, гру, тест та рефлексію буде очищено. Цю дію неможливо скасувати.',
+        () => {
+          localStorage.removeItem(STORAGE_KEY);
+          appState = JSON.parse(JSON.stringify(defaultState));
+          document.getElementById('student-name').value = '';
+          document.getElementById('student-class').value = '';
+          initPractice1(true);
+          initPractice2();
+          initPractice3();
+          renderQuiz();
+          restoreReflectionUI();
+          updateProgressUI();
+          renderReport();
+          showToast('Увесь прогрес скинуто.', 'info');
+        }
+      );
+    }
+
+    // =========================================================
+    // 11. ІНІЦІАЛІЗАЦІЯ ПРИ ЗАВАНТАЖЕННІ СТОРІНКИ
+    // =========================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      // Відновлення профілю та звуку
+      document.getElementById('student-name').value = appState.name || '';
+      document.getElementById('student-class').value = appState.studentClass || '';
+      document.getElementById('sound-toggle-btn').textContent = appState.soundOn ? '🔊' : '🔇';
+
+      // Ініціалізація інтерактивних блоків
+      renderTimeline('abacus');
+      renderHardware('all');
+      initPractice1();
+      initPractice2();
+      initPractice3();
+      renderQuiz();
+      restoreReflectionUI();
+      updateGameHeader();
+      updateProgressUI();
+      switchSection('home');
+    });
+  </script>
+</body>
+</html>
